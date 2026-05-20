@@ -201,7 +201,7 @@ function SEO({ page }: { page: Page }) {
       <meta property="og:url" content={canonical} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="AsherTouch Homecare" />
-      <meta property="og:image" content={`${BASE_URL}/assets/images/caregiver-senior-tea.png`} />
+      <meta property="og:image" content={`${BASE_URL}/assets/images/caregiver-senior-tea.jpg`} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
@@ -582,7 +582,7 @@ function HomePage({ navigate }: { navigate: (page: Page) => void }) {
           </div>
         </div>
         <div className="hero-media" aria-label="Caregiver and senior sharing tea in a sunny living room">
-          <img src="/assets/images/caregiver-senior-tea.png" alt="Caregiver and senior sharing tea in a sunny living room" />
+          <img src="/assets/images/caregiver-senior-tea.jpg" alt="Caregiver and senior sharing tea in a sunny living room" />
           <div className="care-badge">
             <span className="icon-chip green"><Icon name="check" /></span>
             <div>

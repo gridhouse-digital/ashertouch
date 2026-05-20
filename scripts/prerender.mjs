@@ -1,7 +1,8 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { extname, join, resolve } from 'node:path';
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 const distDir = resolve('dist');
 const routes = ['/', '/services', '/services/rates', '/about', '/areas', '/careers', '/contact', '/privacy'];
@@ -122,7 +123,7 @@ function normalizeSeoHead(route, html) {
     `<meta property="og:title" content="${escapeAttribute(meta.title)}">`,
     `<meta property="og:description" content="${escapeAttribute(meta.description)}">`,
     `<meta property="og:url" content="${canonical}">`,
-    `<meta property="og:image" content="${baseUrl}/assets/images/caregiver-senior-tea.png">`,
+    `<meta property="og:image" content="${baseUrl}/assets/images/caregiver-senior-tea.jpg">`,
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${escapeAttribute(meta.title)}">`,
     `<meta name="twitter:description" content="${escapeAttribute(meta.description)}">`,
@@ -137,8 +138,52 @@ function normalizeSeoHead(route, html) {
     .replace('</head>', `${seoTags}</head>`);
 }
 
+async function launchBrowser() {
+  if (!process.env.VERCEL) {
+    const executablePath = await findLocalBrowser();
+    return puppeteer.launch({
+      executablePath,
+      headless: true,
+    });
+  }
+
+  return puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
+  });
+}
+
+async function findLocalBrowser() {
+  const candidates = [
+    process.env.CHROME_EXECUTABLE_PATH,
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {
+      // Try the next known browser path.
+    }
+  }
+
+  throw new Error('No local Chrome or Edge executable found. Set CHROME_EXECUTABLE_PATH to run prerender locally.');
+}
+
 const { server, origin } = await startServer();
-const browser = await puppeteer.launch({ headless: true });
+const browser = await launchBrowser();
 
 try {
   const page = await browser.newPage();
