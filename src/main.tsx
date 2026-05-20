@@ -1,16 +1,32 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 import './styles.css';
+import { rateSchedule, type RateCondition } from './rateSchedule';
 
-type Page = 'home' | 'services' | 'about' | 'areas' | 'careers' | 'contact' | 'privacy';
+type Page = 'home' | 'services' | 'service-rates' | 'about' | 'areas' | 'careers' | 'contact' | 'privacy';
+
+const pagePaths: Record<Page, string> = {
+  home: '/',
+  services: '/services',
+  'service-rates': '/services/rates',
+  about: '/about',
+  areas: '/areas',
+  careers: '/careers',
+  contact: '/contact',
+  privacy: '/privacy',
+};
 
 const CONTACT = {
-  phone: '(437) 871-2988',
-  phoneHref: 'tel:+14378712988',
+  phone: '(416) 293-3779',
+  phoneHref: 'tel:+14162933779',
   email: 'hello@ashertouch-hc.com',
   emailHref: 'mailto:hello@ashertouch-hc.com',
-  mapsHref: 'https://maps.google.com/?q=Toronto,ON',
+  address: '7030 Woodbine Ave, Suite 500, Markham ON L3R 6G2',
+  mapsHref: 'https://maps.google.com/?q=7030%20Woodbine%20Ave%2C%20Suite%20500%2C%20Markham%20ON%20L3R%206G2',
 };
+
+const ANNOUNCEMENT_DISMISSED_KEY = 'ashertouch-announcement-dismissed';
 
 type IconName =
   | 'home'
@@ -33,6 +49,7 @@ type IconName =
 const pageTitles: Record<Page, string> = {
   home: 'AsherTouch Homecare | Toronto Non-Medical Home Care',
   services: 'Home Care Services | AsherTouch Homecare',
+  'service-rates': 'Home Care Rates 2025 | AsherTouch Homecare',
   about: 'About AsherTouch Homecare | Toronto Home Care',
   areas: 'Service Areas | AsherTouch Homecare',
   careers: 'Caregiver Careers | AsherTouch Homecare',
@@ -50,6 +67,12 @@ const serviceAreas = [
   'Brampton',
   'Markham',
   'Richmond Hill',
+  'Pickering',
+  'Ajax',
+  'Oshawa',
+  'Hamilton',
+  'Burlington',
+  'Oakville',
 ];
 
 const services = [
@@ -118,6 +141,137 @@ const whyItems = [
   ['Flexible care, on your terms', 'No long-term contracts required to get started.'],
 ];
 
+const BASE_URL = 'https://ashertouch-hc.com';
+
+const pageMeta: Record<Page, { title: string; description: string; path: string }> = {
+  home: {
+    title: 'AsherTouch Homecare | Toronto Non-Medical Home Care',
+    description: 'Trusted non-medical home care for seniors in Toronto and GTA. Companionship, personal care, meal prep, housekeeping, and respite care. Book a free in-home assessment.',
+    path: '/',
+  },
+  services: {
+    title: 'Home Care Services Toronto | AsherTouch Homecare',
+    description: 'Six core home care services: companionship, personal care, meal preparation, housekeeping, errands, and respite care for Toronto families. Flexible scheduling, no contracts.',
+    path: '/services',
+  },
+  'service-rates': {
+    title: 'Home Care Rates 2025 | AsherTouch Homecare Toronto',
+    description:
+      'AsherTouch Homecare 2025 rate schedule for Toronto and GTA: home support, personal care, 24-hour care, and live-in options. Transparent hourly pricing, billing conditions, free assessment.',
+    path: '/services/rates',
+  },
+  about: {
+    title: 'About AsherTouch Homecare | Toronto Senior Care Agency',
+    description: 'AsherTouch is a Toronto-based, privately owned home care agency built on dignity and compassion. Learn about our caregiver screening and care philosophy.',
+    path: '/about',
+  },
+  areas: {
+    title: 'Service Areas | Home Care in Toronto, Markham & GTA',
+    description: 'AsherTouch provides non-medical home care across Toronto, Markham, Scarborough, North York, Mississauga, Brampton, Durham, Hamilton, Burlington, Oakville, and the GTA.',
+    path: '/areas',
+  },
+  careers: {
+    title: 'Caregiver Jobs Toronto | AsherTouch Homecare Careers',
+    description: 'Join AsherTouch Homecare as a caregiver in Toronto. We value compassion, reliability, and trust. Background checks and training provided.',
+    path: '/careers',
+  },
+  contact: {
+    title: 'Book a Free In-Home Assessment | AsherTouch Homecare',
+    description: 'Schedule your free, no-obligation in-home care assessment in Toronto. Call (416) 293-3779 or fill out our contact form. Response within one business day.',
+    path: '/contact',
+  },
+  privacy: {
+    title: 'Privacy Policy | AsherTouch Homecare',
+    description: 'AsherTouch Homecare privacy policy. How we collect, use, and protect your personal information.',
+    path: '/privacy',
+  },
+};
+
+function SEO({ page }: { page: Page }) {
+  const { title, description, path } = pageMeta[page];
+  const canonical = `${BASE_URL}${path}`;
+
+  return (
+    <Helmet>
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={canonical} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={canonical} />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="AsherTouch Homecare" />
+      <meta property="og:image" content={`${BASE_URL}/assets/images/caregiver-senior-tea.png`} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+    </Helmet>
+  );
+}
+
+function StructuredData() {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'HomeHealthCareService',
+        '@id': `${BASE_URL}/#organization`,
+        name: 'AsherTouch Homecare',
+        url: BASE_URL,
+        telephone: '+1-416-293-3779',
+        email: 'hello@ashertouch-hc.com',
+        description: 'Trusted non-medical home care for seniors and families across Toronto and the Greater Toronto Area.',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: '7030 Woodbine Ave, Suite 500',
+          addressLocality: 'Markham',
+          addressRegion: 'ON',
+          postalCode: 'L3R 6G2',
+          addressCountry: 'CA',
+        },
+        areaServed: serviceAreas.map((area) => ({
+          '@type': 'City',
+          name: area,
+          containedInPlace: { '@type': 'AdministrativeArea', name: 'Greater Toronto Area' },
+        })),
+        hasOfferCatalog: {
+          '@type': 'OfferCatalog',
+          name: 'Home Care Services',
+          itemListElement: services.map((s) => ({
+            '@type': 'Offer',
+            itemOffered: {
+              '@type': 'Service',
+              name: s.title,
+              description: s.text,
+            },
+          })),
+        },
+        priceRange: '$$',
+        openingHoursSpecification: {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          opens: '08:00',
+          closes: '20:00',
+        },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${BASE_URL}/#website`,
+        url: BASE_URL,
+        name: 'AsherTouch Homecare',
+        publisher: { '@id': `${BASE_URL}/#organization` },
+      },
+    ],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+    />
+  );
+}
+
 function Icon({ name }: { name: IconName }) {
   const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
   switch (name) {
@@ -158,8 +312,10 @@ function Icon({ name }: { name: IconName }) {
 
 function useRoute() {
   const readPage = (): Page => {
-    const slug = window.location.pathname.replace(/^\/+/, '').split('/')[0] || 'home';
-    return (Object.keys(pageTitles).includes(slug) ? slug : 'home') as Page;
+    const parts = window.location.pathname.replace(/^\/+/, '').split('/').filter(Boolean);
+    if (parts[0] === 'services' && parts[1] === 'rates') return 'service-rates';
+    const slug = parts[0] || 'home';
+    return (slug in pagePaths ? slug : 'home') as Page;
   };
 
   const [page, setPage] = useState<Page>(readPage);
@@ -171,8 +327,7 @@ function useRoute() {
   }, []);
 
   const navigate = (next: Page) => {
-    const url = next === 'home' ? '/' : `/${next}`;
-    window.history.pushState({}, '', url);
+    window.history.pushState({}, '', pagePaths[next]);
     setPage(next);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -180,17 +335,36 @@ function useRoute() {
   return { page, navigate };
 }
 
+function isNavActive(current: Page, target: Page) {
+  if (current === target) return true;
+  return target === 'services' && current === 'service-rates';
+}
+
 function App() {
   const { page, navigate } = useRoute();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    document.title = pageTitles[page];
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [page, menuOpen]);
+  }, [menuOpen]);
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    menuToggleRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMenu();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [menuOpen, closeMenu]);
 
   const nav = (next: Page) => {
     navigate(next);
@@ -199,11 +373,14 @@ function App() {
 
   return (
     <>
+      <SEO page={page} />
+      <StructuredData />
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <Header page={page} navigate={nav} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+      <Header page={page} navigate={nav} menuOpen={menuOpen} setMenuOpen={setMenuOpen} menuToggleRef={menuToggleRef} closeMenu={closeMenu} />
       <main id="main-content">
         {page === 'home' && <HomePage navigate={nav} />}
         {page === 'services' && <ServicesPage navigate={nav} />}
+        {page === 'service-rates' && <ServiceRatesPage navigate={nav} />}
         {page === 'about' && <AboutPage navigate={nav} />}
         {page === 'areas' && <AreasPage navigate={nav} />}
         {page === 'careers' && <CareersPage navigate={nav} />}
@@ -220,12 +397,21 @@ function Header({
   navigate,
   menuOpen,
   setMenuOpen,
+  menuToggleRef,
+  closeMenu,
 }: {
   page: Page;
   navigate: (page: Page) => void;
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
+  menuToggleRef: React.RefObject<HTMLButtonElement | null>;
+  closeMenu: () => void;
 }) {
+  const [showAnnouncement, setShowAnnouncement] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.sessionStorage.getItem(ANNOUNCEMENT_DISMISSED_KEY) !== 'true';
+  });
+
   const links: Array<[Page, string]> = [
     ['home', 'Home'],
     ['services', 'Services'],
@@ -235,20 +421,76 @@ function Header({
     ['contact', 'Contact'],
   ];
 
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const dismissAnnouncement = () => {
+    window.sessionStorage.setItem(ANNOUNCEMENT_DISMISSED_KEY, 'true');
+    setShowAnnouncement(false);
+  };
+
+  useEffect(() => {
+    if (menuOpen && closeButtonRef.current) {
+      closeButtonRef.current.focus();
+    }
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen || !menuRef.current) return;
+    const focusableElements = menuRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstEl = focusableElements[0];
+    const lastEl = focusableElements[focusableElements.length - 1];
+
+    const trapFocus = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey && document.activeElement === firstEl) {
+        e.preventDefault();
+        lastEl?.focus();
+      } else if (!e.shiftKey && document.activeElement === lastEl) {
+        e.preventDefault();
+        firstEl?.focus();
+      }
+    };
+    document.addEventListener('keydown', trapFocus);
+    return () => document.removeEventListener('keydown', trapFocus);
+  }, [menuOpen]);
+
   return (
     <>
       <header className="site-header">
+        {showAnnouncement && (
+          <div className="announcement-bar" role="region" aria-label="New client discount announcement">
+            <p>
+              <strong>New client offer:</strong> Save 10% on home care services.
+            </p>
+            <button className="announcement-link" onClick={() => navigate('contact')}>
+              Book your free assessment
+              <Icon name="arrow" />
+            </button>
+            <button className="announcement-close" onClick={dismissAnnouncement} aria-label="Dismiss announcement">
+              <Icon name="close" />
+            </button>
+          </div>
+        )}
         <div className="topbar">
           <span>Serving Toronto & the Greater Toronto Area</span>
           <span>Monday-Saturday | Evening consultations available</span>
         </div>
         <nav className="nav-shell" aria-label="Main navigation">
           <button className="logo-button" onClick={() => navigate('home')} aria-label="AsherTouch Homecare home">
-            <img src="/assets/logo/ashertouch-light-mode-logo.png" alt="AsherTouch Homecare Inc." />
+            <img src="/assets/logo/ashertouch-light-mode-logo.png" alt="" />
           </button>
-          <div className="desktop-nav">
+          <div className="desktop-nav" role="menubar">
             {links.map(([target, label]) => (
-              <button key={target} className={page === target ? 'active' : ''} onClick={() => navigate(target)}>
+              <button
+                key={target}
+                role="menuitem"
+                className={isNavActive(page, target) ? 'active' : ''}
+                aria-current={isNavActive(page, target) ? 'page' : undefined}
+                onClick={() => navigate(target)}
+              >
                 {label}
               </button>
             ))}
@@ -262,22 +504,43 @@ function Header({
               Free assessment
               <Icon name="arrow" />
             </button>
-            <button className="icon-action menu-toggle" onClick={() => setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen}>
+            <button
+              ref={menuToggleRef}
+              className="icon-action menu-toggle"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+            >
               <Icon name="menu" />
             </button>
           </div>
         </nav>
       </header>
-      <div className={`mobile-menu ${menuOpen ? 'open' : ''}`} aria-hidden={!menuOpen}>
+      <div
+        id="mobile-menu"
+        ref={menuRef}
+        className={`mobile-menu ${menuOpen ? 'open' : ''}`}
+        role="dialog"
+        aria-modal={menuOpen ? 'true' : undefined}
+        aria-label="Mobile navigation menu"
+        aria-hidden={!menuOpen}
+      >
         <div className="mobile-menu-head">
-          <img src="/assets/logo/ashertouch-light-mode-logo.png" alt="AsherTouch Homecare Inc." />
-          <button className="icon-action" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+          <img src="/assets/logo/ashertouch-light-mode-logo.png" alt="" />
+          <button ref={closeButtonRef} className="icon-action" onClick={closeMenu} aria-label="Close menu">
             <Icon name="close" />
           </button>
         </div>
-        <div className="mobile-menu-links">
+        <div className="mobile-menu-links" role="menu">
           {links.map(([target, label]) => (
-            <button key={target} onClick={() => navigate(target)} className={page === target ? 'active' : ''}>
+            <button
+              key={target}
+              role="menuitem"
+              onClick={() => navigate(target)}
+              className={isNavActive(page, target) ? 'active' : ''}
+              aria-current={isNavActive(page, target) ? 'page' : undefined}
+            >
               {label}
             </button>
           ))}
@@ -508,7 +771,7 @@ function ServiceAreaSection({ navigate }: { navigate: (page: Page) => void }) {
       <SectionHead
         label="Service area"
         title={<>Proudly serving Toronto and beyond.</>}
-        text="We provide home care services across Toronto and the Greater Toronto Area. Not sure if we cover your area? Give us a call and we'll do our best to help."
+        text="Proudly serving the Greater Toronto Area. We provide home care services across the Greater Toronto Area....."
       />
       <div className="area-layout">
         <div className="area-list">
@@ -527,10 +790,10 @@ function MapEmbed() {
   return (
     <div className="map-embed">
       <iframe
-        title="Map of Toronto, Ontario, Canada"
+        title={`Map of ${CONTACT.address}`}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
-        src="https://www.google.com/maps?q=Toronto%2C%20ON%2C%20Canada&output=embed"
+        src="https://www.google.com/maps?q=7030%20Woodbine%20Ave%2C%20Suite%20500%2C%20Markham%20ON%20L3R%206G2&output=embed"
       />
     </div>
   );
@@ -545,7 +808,7 @@ function ClosingCta({ navigate }: { navigate: (page: Page) => void }) {
           Start with a free, no-obligation <em>in-home assessment.</em>
         </h2>
         <p>
-          Call or fill out the contact form and we'll schedule a conversation at a time that works for your family. No
+          Call or fill out the contact form and we'll schedule a conversation at a time that works for you and your family. No
           paperwork, no pressure, just a conversation.
         </p>
       </div>
@@ -571,7 +834,7 @@ function ServicesPage({ navigate }: { navigate: (page: Page) => void }) {
         <div className="story-grid">
           <StoryCard number="i" tone="orange" title="Free in-home assessment" text="A care coordinator listens, meets your loved one, and helps you understand the options." />
           <StoryCard number="ii" tone="orange" title="Caregiver matching" text="Personality, language, routine, and comfort matter before care enters the home." />
-          <StoryCard number="iii" tone="orange" title="Care begins gently" text="Start with a few hours a week and adjust as your family's needs change." />
+          <StoryCard number="iii" tone="orange" title="Care begins at your pace" text="Start with as few or as many hours as you prefer and adjust as your family's needs change." />
         </div>
       </section>
       <section className="section">
@@ -583,7 +846,7 @@ function ServicesPage({ navigate }: { navigate: (page: Page) => void }) {
         </div>
       </section>
       <section className="section paper">
-        <SectionHead label="What's included" title={<>Standards on every visit.</>} text="Every AsherTouch visit comes with the same expectations, so families know exactly what is included." />
+        <SectionHead label="What's included" title={<>Standards on every care.</>} text="Every AsherTouch care comes with the same expectations, so families know exactly what is included." />
         <div className="included-grid">
           {[
             'Vulnerable Sector background check',
@@ -598,6 +861,87 @@ function ServicesPage({ navigate }: { navigate: (page: Page) => void }) {
             <span key={item}><Icon name="check" />{item}</span>
           ))}
         </div>
+      </section>
+      <div className="center-action">
+        <button className="text-button" onClick={() => navigate('service-rates')}>
+          View our 2025 rate schedule <Icon name="arrow" />
+        </button>
+      </div>
+      <ClosingCta navigate={navigate} />
+    </>
+  );
+}
+
+function RateConditionText({ condition }: { condition: RateCondition }) {
+  if ('text' in condition) {
+    return <>{condition.text}</>;
+  }
+  return (
+    <>
+      {condition.before}
+      <strong>{condition.emphasis}</strong>
+      {condition.after}
+    </>
+  );
+}
+
+function ServiceRatesPage({ navigate }: { navigate: (page: Page) => void }) {
+  return (
+    <>
+      <section className="section rate-schedule-back">
+        <button className="text-button" onClick={() => navigate('services')}>
+          ← Back to services
+        </button>
+      </section>
+      <PageHero
+        label={rateSchedule.effectiveLabel}
+        title={
+          <>
+            Our Services & <em>Rates</em>
+          </>
+        }
+        text={rateSchedule.intro}
+        action="Book a free assessment"
+        navigate={navigate}
+      />
+      <section className="section rate-schedule">
+        <div className="rate-schedule-table" aria-label="Service rates">
+          <div className="rate-schedule-header" aria-hidden="true">
+            <span>Service</span>
+            <span>Rate</span>
+          </div>
+          {rateSchedule.services.map((service) => (
+            <article key={service.name} className="rate-schedule-row">
+              <div className="rate-schedule-copy">
+                <span className={`rate-schedule-category ${service.categoryTone}`}>
+                  <span className="rate-schedule-dot" aria-hidden="true" />
+                  {service.category}
+                </span>
+                <h2 className="rate-schedule-name">{service.name}</h2>
+                <p className="rate-schedule-desc">{service.description}</p>
+              </div>
+              <div className="rate-schedule-rate">
+                <div className="rate-amount">{service.amount}</div>
+                <div className="rate-unit">{service.unit}</div>
+                <div className={`rate-exempt ${service.exemptTone}`}>{service.exempt}</div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="section paper rate-schedule">
+        <SectionHead label="Billing conditions" title={<>What to expect on your invoice.</>} />
+        <div className="rate-schedule-conditions">
+          {rateSchedule.conditions.map((condition) => (
+            <div key={condition.label} className="rate-condition-row">
+              <span className="rate-cond-label">{condition.label}</span>
+              <span className="rate-cond-text">
+                <RateConditionText condition={condition} />
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="rate-schedule-note">All rates in CAD · Toronto &amp; the GTA</p>
       </section>
       <ClosingCta navigate={navigate} />
     </>
@@ -617,7 +961,7 @@ function AboutPage({ navigate }: { navigate: (page: Page) => void }) {
         <div className="about-layout">
           <div>
             <span className="section-label">Our belief</span>
-            <h2>Every client is someone's parent, grandparent, partner, or friend.</h2>
+            <h2>Every client is someone's loved one, and we never forget that</h2>
           </div>
           <div className="copy-stack">
             <p>
@@ -641,12 +985,17 @@ function AreasPage({ navigate }: { navigate: (page: Page) => void }) {
   return (
     <>
       <PageHero
-        title={<>Home care across <em>Toronto & the GTA.</em></>}
-        text="AsherTouch serves families across Toronto and nearby communities. Final service areas should be confirmed before production launch."
+        title={<>Home care across <em>Toronto & The GTA.</em></>}
+        text="AsherTouch supports seniors and families across Toronto, Markham, Durham, Peel, Halton, Hamilton, and nearby communities. If you are not sure whether we cover your neighbourhood, start with a quick call."
         action="Ask about your area"
         navigate={navigate}
       />
       <section className="section">
+        <SectionHead
+          label="Where we serve"
+          title={<>Flexible home care across familiar GTA communities.</>}
+          text="Care needs do not always fit clean city boundaries. We confirm availability during the free assessment and match care based on your location, schedule, and support needs."
+        />
         <div className="area-layout">
           <div className="area-list large">
             {serviceAreas.map((area) => (
@@ -654,6 +1003,45 @@ function AreasPage({ navigate }: { navigate: (page: Page) => void }) {
             ))}
           </div>
           <MapEmbed />
+        </div>
+      </section>
+      <section className="section paper">
+        <SectionHead
+          label="Care available by area"
+          title={<>The same core services, close to home.</>}
+          text="Families across our service area can ask about companionship, personal care, meal support, light housekeeping, errands, and respite care."
+        />
+        <div className="service-grid">
+          {services.map((service) => (
+            <ServiceCard key={service.title} service={service} compact />
+          ))}
+        </div>
+      </section>
+      <section className="section">
+        <SectionHead
+          label="Service area questions"
+          title={<>Not sure if your neighbourhood is covered?</>}
+          text="These are the most common questions families ask before booking an assessment."
+        />
+        <div className="story-grid">
+          <StoryCard
+            number="i"
+            tone="blue"
+            title="Can you help outside Toronto?"
+            text="Yes, AsherTouch lists service coverage across Toronto and surrounding GTA communities. Call to confirm caregiver availability for your exact address."
+          />
+          <StoryCard
+            number="ii"
+            tone="green"
+            title="Do services vary by location?"
+            text="The core non-medical services are consistent, but scheduling depends on caregiver availability, visit length, travel distance, and the care plan."
+          />
+          <StoryCard
+            number="iii"
+            tone="orange"
+            title="What happens during the assessment?"
+            text="A care coordinator learns about routines, location, timing, family preferences, and the type of support needed before recommending next steps."
+          />
         </div>
       </section>
       <ClosingCta navigate={navigate} />
@@ -690,7 +1078,7 @@ function ContactPage() {
 
   if (submitted) {
     return (
-      <section className="section success-section">
+      <section className="section success-section" role="status" aria-live="polite">
         <span className="icon-chip green"><Icon name="check" /></span>
         <h1>Thank you. Your request is ready for follow-up.</h1>
         <p>
@@ -711,35 +1099,60 @@ function ContactPage() {
       <section className="section paper contact-section">
         <div className="contact-layout">
           <form className="form-card" onSubmit={(event) => { event.preventDefault(); setSubmitted(true); }}>
-            <div className="stepper" aria-label="Assessment form progress">
-              <span className="active">1</span><i /><span>2</span><i /><span>3</span>
+            <div className="stepper" role="group" aria-label="Assessment form progress: Step 1 of 3">
+              <span className="active" aria-current="step">1</span><i aria-hidden="true" /><span>2</span><i aria-hidden="true" /><span>3</span>
             </div>
             <h2>Book your free in-home assessment</h2>
             <p>Step 1 of 3. Required fields are marked.</p>
             <div className="field-grid">
-              <label>First name <input required placeholder="e.g. Maria" /></label>
-              <label>Last name <input required placeholder="e.g. Reyes" /></label>
+              <div className="field">
+                <label htmlFor="firstName">First name <span aria-hidden="true">*</span></label>
+                <input id="firstName" name="firstName" required placeholder="e.g. Maria" autoComplete="given-name" />
+              </div>
+              <div className="field">
+                <label htmlFor="lastName">Last name <span aria-hidden="true">*</span></label>
+                <input id="lastName" name="lastName" required placeholder="e.g. Reyes" autoComplete="family-name" />
+              </div>
             </div>
             <div className="field-grid">
-              <label>Email <input required type="email" placeholder="you@example.com" /></label>
-              <label>Phone <input required type="tel" placeholder="(437) 871-2988" /></label>
+              <div className="field">
+                <label htmlFor="email">Email <span aria-hidden="true">*</span></label>
+                <input id="email" name="email" required type="email" placeholder="you@example.com" autoComplete="email" />
+              </div>
+              <div className="field">
+                <label htmlFor="phone">Phone <span aria-hidden="true">*</span></label>
+                <input id="phone" name="phone" required type="tel" placeholder="(416) 293-3779" autoComplete="tel" />
+              </div>
             </div>
             <fieldset>
               <legend>Your relationship to the person needing care</legend>
               <div className="radio-grid">
-                {options.map((option) => (
-                  <button type="button" key={option} className={relationship === option ? 'selected' : ''} onClick={() => setRelationship(option)}>
-                    <span />{option}
-                  </button>
-                ))}
+                {options.map((option) => {
+                  const id = `relationship-${option.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '')}`;
+                  return (
+                    <label key={option} className={`radio-option ${relationship === option ? 'selected' : ''}`} htmlFor={id}>
+                      <input
+                        type="radio"
+                        id={id}
+                        name="relationship"
+                        value={option}
+                        checked={relationship === option}
+                        onChange={() => setRelationship(option)}
+                      />
+                      <span className="radio-indicator" aria-hidden="true" />
+                      {option}
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
-            <label>What kind of support are you looking for?
-              <textarea placeholder="Tell us a little about your loved one's routines, needs, or questions." />
-            </label>
+            <div className="field">
+              <label htmlFor="support">What kind of support are you looking for?</label>
+              <textarea id="support" name="support" placeholder="Tell us a little about your loved one's routines, needs, or questions." />
+            </div>
             <button className="btn btn-primary btn-large" type="submit">Continue to step 2 <Icon name="arrow" /></button>
           </form>
-          <aside className="contact-cards">
+          <aside className="contact-cards" aria-label="Contact information">
             <a className="contact-card" href={CONTACT.phoneHref}>
               <span className="icon-chip blue"><Icon name="phone" /></span>
               <small>Phone</small>
@@ -750,11 +1163,11 @@ function ContactPage() {
               <small>Email</small>
               <strong>{CONTACT.email}</strong>
             </a>
-            <article className="contact-card">
+            <a className="contact-card" href={CONTACT.mapsHref} target="_blank" rel="noreferrer">
               <span className="icon-chip green"><Icon name="pin" /></span>
-              <small>Service area</small>
-              <strong>Toronto & GTA</strong>
-            </article>
+              <small>Office address</small>
+              <strong>{CONTACT.address}</strong>
+            </a>
           </aside>
         </div>
       </section>
@@ -776,12 +1189,25 @@ function PrivacyPage({ navigate }: { navigate: (page: Page) => void }) {
   );
 }
 
-function PageHero({ title, text, action, navigate }: { title: React.ReactNode; text: string; action?: string; navigate?: (page: Page) => void }) {
+function PageHero({
+  label,
+  title,
+  text,
+  action,
+  navigate,
+}: {
+  label?: string;
+  title: React.ReactNode;
+  text: string;
+  action?: string;
+  navigate?: (page: Page) => void;
+}) {
   return (
     <section className="page-hero">
       <div>
+        {label && <span className="section-label">{label}</span>}
         <h1>{title}</h1>
-        <p>{text}</p>
+        <p className={label ? 'page-hero-lede' : undefined}>{text}</p>
         {action && navigate && <button className="btn btn-primary btn-large" onClick={() => navigate('contact')}>{action}<Icon name="arrow" /></button>}
       </div>
     </section>
@@ -800,6 +1226,7 @@ function Footer({ navigate }: { navigate: (page: Page) => void }) {
         <div>
           <h3>Services</h3>
           {services.slice(0, 5).map((service) => <button key={service.title} onClick={() => navigate('services')}>{service.shortTitle}</button>)}
+          <button onClick={() => navigate('service-rates')}>Rates &amp; billing</button>
         </div>
         <div>
           <h3>Company</h3>
@@ -812,7 +1239,7 @@ function Footer({ navigate }: { navigate: (page: Page) => void }) {
           <h3>Get in touch</h3>
           <a href={CONTACT.phoneHref}><Icon name="phone" /> {CONTACT.phone}</a>
           <a href={CONTACT.emailHref}><Icon name="mail" /> {CONTACT.email}</a>
-          <a href={CONTACT.mapsHref} target="_blank" rel="noreferrer"><Icon name="pin" /> Toronto, Ontario</a>
+          <a href={CONTACT.mapsHref} target="_blank" rel="noreferrer"><Icon name="pin" /> {CONTACT.address}</a>
         </div>
       </div>
       <div className="footer-bottom">
@@ -825,6 +1252,8 @@ function Footer({ navigate }: { navigate: (page: Page) => void }) {
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   </React.StrictMode>,
 );
