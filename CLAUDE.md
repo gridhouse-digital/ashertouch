@@ -1,131 +1,62 @@
-# AsherTouch Website Project
+# CLAUDE.md
 
-This is the website project for **AsherTouch Homecare**, a Toronto-based non-medical home care agency serving seniors and families across Toronto and the Greater Toronto Area.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-All website code, components, build tooling, and `.claude/` configuration live inside this folder. Client strategy, brand notes, and content planning live one level up in `client-notes/` and `research/`.
+## Commands
 
-## Website Priorities
+```bash
+# Development
+npm run dev          # Start Vite dev server at http://localhost:5173
 
-- Professional home care agency design
-- Warm and trustworthy messaging
-- Clear services
-- Mobile-first layout
-- Fast loading
-- Accessible UI (WCAG AA as a baseline)
-- SEO-friendly structure
-- Strong contact and lead-capture flow
-- Clear free in-home assessment CTA
-- Easy navigation for families, seniors, caregivers, referral partners, and potential employees
-- Local Toronto/GTA relevance
+# Build
+npm run build        # TypeScript check → Vite bundle → Puppeteer SSG prerender
+npm run build:spa    # TypeScript check → Vite bundle only (no prerender)
+npm run prerender    # Run SSG prerender step in isolation
 
-## Primary Website Goal
+# Preview
+npm run preview      # Preview the dist/ build locally
+```
 
-The primary goal is to get families to **book a free in-home assessment**.
+There is no test runner configured. `@axe-core/react` is installed for accessibility auditing but is not wired to a test framework.
 
-## Secondary Goals
+## Architecture
 
-- Encourage phone calls
-- Encourage contact form submissions
-- Explain services clearly
-- Build trust
-- Support caregiver recruitment
-- Improve local SEO for Toronto/GTA home care searches
+### Monolithic single-file app
 
-## Suggested Pages
+All UI lives in `src/main.tsx` (~1,400 lines). There is no component library, no router package, and no separate component files. Page routing is handled manually via a `Page` union type and component state:
 
-- Home
-- About AsherTouch
-- Services
-- Companionship Care
-- Personal Care
-- Respite Care
-- Service Areas
-- Careers / Become a Caregiver
-- Contact / Book Free Assessment
-- Privacy Policy
+```ts
+type Page = 'home' | 'services' | 'service-rates' | 'about' | 'areas' | 'careers' | 'contact' | 'privacy';
+```
 
-## Homepage Sections
+`pagePaths` maps each `Page` key to its URL slug. Navigation updates `window.history` and sets state — no React Router involved.
 
-Use this structure (mirrors `client-notes/content-notes.md`):
+### Key data in main.tsx
 
-1. Hero
-2. Trust bar
-3. Who we are
-4. Services
-5. Why AsherTouch
-6. Social proof / testimonials
-7. Service areas
-8. Closing CTA
-9. Footer
+- `CONTACT` — single source of truth for phone, email, address (top of file, update here first)
+- `serviceAreas` — hardcoded list of 15 GTA locations
+- `services` — service definitions with icons, descriptions, and links
+- `pageTitles` / `pageDescriptions` — per-route SEO metadata fed into `react-helmet-async`
 
-## Development Standards
+### Styling
 
-- Use clean, maintainable code.
-- Keep components reusable.
-- Use semantic HTML.
-- Prioritize accessibility (keyboard navigation, focus states, alt text, sufficient contrast).
-- Use responsive design (mobile-first).
-- Keep design modern, calm, warm, and trustworthy.
-- Do not hardcode sensitive information.
-- Keep client-specific content easy to update (centralize copy and config where practical).
-- Use clear file and component names.
-- Avoid unnecessary complexity.
-- Do not add dependencies unless needed.
-- Do not expose API keys, form secrets, or private client data in the repo or client-side code.
+All CSS lives in `src/styles.css` (one file, ~34 KB). No Tailwind, no CSS Modules, no CSS-in-JS. Design tokens (colours, spacing, typography) are CSS custom properties at the top of the file.
 
-## Content Rules
+### Static site generation (SSG)
 
-Use language that is:
+The production build is a hybrid: Vite bundles the SPA, then `scripts/prerender.mjs` launches Puppeteer to render each of the 8 routes and write static HTML into `dist/`. This gives crawlers real HTML while the client hydrates normally. On Vercel the script uses `@sparticuz/chromium`; locally it auto-detects an installed Chrome or Edge.
 
-- Warm
-- Clear
-- Professional
-- Trust-building
-- Easy to understand
-- Suitable for families seeking care for loved ones
+If the prerender step fails (common in CI without a display), use `npm run build:spa` to skip it.
 
-Avoid language that is:
+### SEO / sitemap
 
-- Too corporate
-- Too vague
-- Overpromising
-- Legally risky
-- Full of unsupported healthcare claims
-- Too clinical
-- Too cold
+`vite.config.ts` uses `vite-plugin-sitemap` to auto-generate `sitemap.xml` for the 7 non-home routes. `public/_headers` and `public/_redirects` carry Netlify/Vercel header and redirect rules.
 
-## Local SEO Notes
+## Content & Compliance Rules
 
-Include location-aware wording naturally throughout titles, headings, body copy, and metadata. **Do not keyword-stuff.**
-
-Service-area keywords to weave in naturally:
-
-- Home care Toronto
-- Senior care Toronto
-- Non-medical home care Toronto
-- Home care Scarborough
-- Senior care North York
-- Home care Etobicoke
-- Respite care Toronto
-- Companion care Toronto
-
-Plan for individual service-area landing pages over time once core content ships. Use proper title tags, meta descriptions, structured data (e.g., LocalBusiness), and clean URL slugs.
-
-## Placeholder Rules
-
-The following must remain placeholders until confirmed by the client:
-
-- Phone number
-- Email address
-- Business address
-- Testimonials
-- Licenses
-- Certifications
-- Insurance claims
-- Awards
-- Staff photos
-- Founder story
-- Final service areas
-- Final business hours
-
-If a value isn't confirmed, mark it clearly (for example: `[Phone Number Needed]`) so it cannot accidentally ship to production.
+- Services are **non-medical**. Do not add medical, clinical, or regulated health claims.
+- The following data is **confirmed** and may be used in code: phone `(416) 293-3779`, email `hello@ashertouch-hc.com`, address `7030 Woodbine Ave, Suite 500, Markham ON L3R 6G2`.
+- The following must stay as visible placeholders until the client confirms: testimonials, staff photos, licenses, certifications, insurance claims, business hours, founder story.
+- Mark unconfirmed values as `[Placeholder — value needed]` so they cannot accidentally ship.
+- Use Canadian spelling (e.g., "neighbourhood", "centre").
+- Primary conversion goal: **book a free in-home assessment**.

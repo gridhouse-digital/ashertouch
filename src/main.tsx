@@ -635,32 +635,10 @@ function tryFillCallbackMessage(root: ParentNode) {
   return true;
 }
 
-function forceOpenJotformPanel(root: HTMLElement | null) {
-  const panel = root?.querySelector<HTMLElement>('.panel-view');
-  const slider = root?.querySelector<HTMLElement>('.panel-view-slider');
-  const wrapper = root?.querySelector<HTMLElement>('.panel-view-fixed-wrapper');
-  const chat = root?.querySelector<HTMLElement>('.ai-agent-chat-animation-container');
-
-  panel?.classList.add('opened');
-  slider?.classList.add('isPanelOpened');
-  chat?.classList.add('isOpened');
-
-  [wrapper, slider, chat].forEach((element) => {
-    if (!element) return;
-    element.style.pointerEvents = 'auto';
-    element.style.opacity = '1';
-    element.style.transform = 'translate3d(0, 0, 0)';
-    element.style.visibility = 'visible';
-  });
-
-  return Boolean(slider);
-}
-
 async function promptCallbackChatbot() {
   const root = document.getElementById(JOTFORM_AGENT_ROOT_ID);
   const frame = getJotformFrame();
 
-  forceOpenJotformPanel(root);
   clickVisibleElement([
     ...(root ? Array.from(root.querySelectorAll('button, [role="button"], [class*="avatar"], [class*="launcher"], img')) : []),
     ...(frame ? [frame] : []),
