@@ -403,7 +403,13 @@ a.btn-outline {
 }
 
 .mobile-menu-head img {
+  display: block;
+  flex-shrink: 0;
   width: 138px;
+  height: auto;
+  max-width: calc(100% - 56px);
+  aspect-ratio: 350 / 120;
+  object-fit: contain;
 }
 
 .mobile-menu-links {
