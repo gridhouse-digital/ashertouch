@@ -203,6 +203,15 @@ svg {
   position: relative;
 }
 
+.nav-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: -18px;
+  right: -18px;
+  height: 16px;
+}
+
 .nav-dropdown-menu {
   position: absolute;
   top: calc(100% + 12px);
