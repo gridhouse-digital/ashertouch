@@ -563,8 +563,8 @@ function HomePage({ navigate }: { navigate: (page: Page) => void }) {
             Compassionate care, <em>right at home.</em>
           </h1>
           <p>
-            Trusted non-medical home care for seniors and families across Toronto. Warm, reliable, personalized support so
-            your family has peace of mind and your loved one has the care they deserve.
+            Trusted non-medical home care for seniors and families across the Greater Toronto Area (GTA). Warm, reliable,
+            personalized support so your family has peace of mind and your loved one has the care they deserve.
           </p>
           <div className="hero-actions">
             <button className="btn btn-primary btn-large" onClick={() => navigate('contact')}>
@@ -586,6 +586,7 @@ function HomePage({ navigate }: { navigate: (page: Page) => void }) {
           <div className="care-badge">
             <span className="icon-chip green"><Icon name="check" /></span>
             <div>
+              <span className="care-badge-kicker">In-home care promise</span>
               <strong>Age with dignity at home</strong>
               <small>Personally screened caregivers</small>
             </div>
@@ -770,8 +771,8 @@ function ServiceAreaSection({ navigate }: { navigate: (page: Page) => void }) {
     <section className="section">
       <SectionHead
         label="Service area"
-        title={<>Proudly serving Toronto and beyond.</>}
-        text="Proudly serving the Greater Toronto Area. We provide home care services across the Greater Toronto Area....."
+        title={<>Proudly serving the Greater Toronto Area</>}
+        text="We provide home care services across the Greater Toronto Area. Not sure if we cover your area? Give us a call and we'll do our best to help"
       />
       <div className="area-layout">
         <div className="area-list">
@@ -1226,7 +1227,6 @@ function Footer({ navigate }: { navigate: (page: Page) => void }) {
         <div>
           <h3>Services</h3>
           {services.slice(0, 5).map((service) => <button key={service.title} onClick={() => navigate('services')}>{service.shortTitle}</button>)}
-          <button onClick={() => navigate('service-rates')}>Rates &amp; billing</button>
         </div>
         <div>
           <h3>Company</h3>
