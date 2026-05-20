@@ -19,8 +19,8 @@ const pagePaths: Record<Page, string> = {
 };
 
 const CONTACT = {
-  phone: '(416) 293-3779',
-  phoneHref: 'tel:+14162933779',
+  phone: '(437) 871-2988',
+  phoneHref: 'tel:+14378712988',
   email: 'hello@ashertouch-hc.com',
   emailHref: 'mailto:hello@ashertouch-hc.com',
   address: '7030 Woodbine Ave, Suite 500, Markham ON L3R 6G2',
@@ -196,7 +196,7 @@ const pageMeta: Record<Page, { title: string; description: string; path: string 
   },
   contact: {
     title: 'Book a Free In-Home Assessment | AsherTouch Homecare',
-    description: 'Schedule your free, no-obligation in-home care assessment in Toronto. Call (416) 293-3779 or fill out our contact form. Response within one business day.',
+    description: 'Schedule your free, no-obligation in-home care assessment in Toronto. Call (437) 871-2988 or fill out our contact form. Response within one business day.',
     path: '/contact',
   },
   privacy: {
@@ -237,7 +237,7 @@ function StructuredData() {
         '@id': `${BASE_URL}/#organization`,
         name: 'AsherTouch Homecare',
         url: BASE_URL,
-        telephone: '+1-416-293-3779',
+        telephone: '+1-437-871-2988',
         email: 'hello@ashertouch-hc.com',
         description: 'Trusted non-medical home care for seniors and families across Toronto and the Greater Toronto Area.',
         address: {
@@ -499,7 +499,7 @@ function Header({
         </div>
         <nav className="nav-shell" aria-label="Main navigation">
           <button className="logo-button" onClick={() => navigate('home')} aria-label="AsherTouch Homecare home">
-            <img src="/assets/logo/ashertouch-light-mode-logo.png" alt="" />
+            <img src="/assets/logo/ashertouch-light-mode-logo.png" width="350" height="120" alt="" />
           </button>
           <div className="desktop-nav" role="menubar">
             {links.map(([target, label]) =>
@@ -573,7 +573,7 @@ function Header({
         aria-hidden={!menuOpen}
       >
         <div className="mobile-menu-head">
-          <img src="/assets/logo/ashertouch-light-mode-logo.png" alt="" />
+          <img src="/assets/logo/ashertouch-light-mode-logo.png" width="350" height="120" alt="" />
           <button ref={closeButtonRef} className="icon-action" onClick={closeMenu} aria-label="Close menu">
             <Icon name="close" />
           </button>
@@ -616,6 +616,17 @@ function Header({
 const JOTFORM_AGENT_ID = '019e43a10d0b7b74a9f3b75bd0df905b92c6';
 const JOTFORM_AGENT_ROOT_ID = `JotformAgent-${JOTFORM_AGENT_ID}`;
 
+const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
+async function waitForJotformRoot() {
+  for (let i = 0; i < 20; i += 1) {
+    const root = document.getElementById(JOTFORM_AGENT_ROOT_ID);
+    if (root) return root;
+    await wait(150);
+  }
+  return null;
+}
+
 function triggerClick(element: HTMLElement) {
   ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach((type) => {
     element.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
@@ -657,13 +668,12 @@ function getJotformFrame() {
 }
 
 async function promptCallbackChatbot() {
-  const root = document.getElementById(JOTFORM_AGENT_ROOT_ID);
+  const root = await waitForJotformRoot();
   const alreadyOpen = root?.querySelector('.ai-agent-chat-window-open, .ai-agent-chat-open, [class*="chat-open"]');
 
   if (!alreadyOpen) {
     openJotformLauncher(root);
-    // Wait for the chat panel to finish opening before sending
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 800));
+    await wait(800);
   }
 
   const frame = getJotformFrame();
@@ -701,7 +711,26 @@ function HomePage({ navigate }: { navigate: (page: Page) => void }) {
           </div>
         </div>
         <div className="hero-media" aria-label="Caregiver and senior sharing tea in a sunny living room">
-          <img src="/assets/images/caregiver-senior-tea.jpg" alt="Caregiver and senior sharing tea in a sunny living room" />
+          <picture>
+            <source
+              type="image/avif"
+              srcSet="/assets/images/caregiver-senior-tea-480.avif 480w, /assets/images/caregiver-senior-tea-768.avif 768w, /assets/images/caregiver-senior-tea-1086.avif 1086w"
+              sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1180px) calc(100vw - 96px), 46vw"
+            />
+            <source
+              type="image/webp"
+              srcSet="/assets/images/caregiver-senior-tea-480.webp 480w, /assets/images/caregiver-senior-tea-768.webp 768w, /assets/images/caregiver-senior-tea-1086.webp 1086w"
+              sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1180px) calc(100vw - 96px), 46vw"
+            />
+            <img
+              src="/assets/images/caregiver-senior-tea.jpg"
+              alt="Caregiver and senior sharing tea in a sunny living room"
+              width="1448"
+              height="1086"
+              fetchPriority="high"
+              decoding="async"
+            />
+          </picture>
           <div className="care-badge">
             <span className="icon-chip green"><Icon name="check" /></span>
             <div>
@@ -1355,7 +1384,7 @@ function Footer({ navigate }: { navigate: (page: Page) => void }) {
     <footer className="footer">
       <div className="footer-grid">
         <div>
-          <img src="/assets/logo/ashertouch-dark-mode-logo.png" alt="AsherTouch Homecare Inc." />
+          <img src="/assets/logo/ashertouch-dark-mode-logo.png" width="350" height="120" alt="AsherTouch Homecare Inc." />
           <p>Compassionate non-medical home care for seniors and families across Toronto and the Greater Toronto Area.</p>
           <p className="signature">Where dignity meets care.</p>
         </div>

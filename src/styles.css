@@ -1,14 +1,14 @@
 :root {
   --blue-50: #e8f4fb;
   --blue-100: #bfdff1;
-  --blue-500: #2196d6;
+  --blue-500: #176b9b;
   --blue-700: #1a6ca0;
   --blue-900: #0e3a5c;
   --orange-50: #fef4e2;
   --orange-100: #fce0b0;
   --orange-300: #f8c168;
-  --orange-500: #f39c12;
-  --orange-700: #c97804;
+  --orange-500: #985a00;
+  --orange-700: #7a4700;
   --green-50: #eef7dd;
   --green-100: #cce7a0;
   --green-500: #7ab929;
@@ -583,7 +583,11 @@ em {
   min-height: 560px;
 }
 
-.hero-media > img {
+.hero-media picture {
+  display: block;
+}
+
+.hero-media img {
   width: 100%;
   height: min(64vh, 650px);
   min-height: 470px;
@@ -1557,7 +1561,7 @@ textarea:focus-visible {
     min-height: 0;
   }
 
-  .hero-media > img {
+  .hero-media img {
     height: auto;
     aspect-ratio: 4 / 3;
     min-height: 0;
