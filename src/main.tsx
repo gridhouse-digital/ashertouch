@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
+import 'leaflet/dist/leaflet.css';
 import './styles.css';
 import { rateSchedule, type RateCondition } from './rateSchedule';
 
@@ -73,6 +74,24 @@ const serviceAreas = [
   'Hamilton',
   'Burlington',
   'Oakville',
+];
+
+const serviceAreaLocations: Array<{ name: string; coords: [number, number] }> = [
+  { name: 'Downtown Toronto', coords: [43.6532, -79.3832] },
+  { name: 'East York', coords: [43.6912, -79.3417] },
+  { name: 'Scarborough', coords: [43.7764, -79.2318] },
+  { name: 'North York', coords: [43.7615, -79.4111] },
+  { name: 'Etobicoke', coords: [43.6205, -79.5132] },
+  { name: 'Mississauga', coords: [43.589, -79.6441] },
+  { name: 'Brampton', coords: [43.7315, -79.7624] },
+  { name: 'Markham', coords: [43.8561, -79.337] },
+  { name: 'Richmond Hill', coords: [43.8828, -79.4403] },
+  { name: 'Pickering', coords: [43.8384, -79.0868] },
+  { name: 'Ajax', coords: [43.8509, -79.0204] },
+  { name: 'Oshawa', coords: [43.8971, -78.8658] },
+  { name: 'Oakville', coords: [43.4675, -79.6877] },
+  { name: 'Burlington', coords: [43.3255, -79.799] },
+  { name: 'Hamilton', coords: [43.2557, -79.8711] },
 ];
 
 const services = [
@@ -596,12 +615,12 @@ function Header({
 
 const JOTFORM_AGENT_ID = '019e43a10d0b7b74a9f3b75bd0df905b92c6';
 const JOTFORM_AGENT_ROOT_ID = `JotformAgent-${JOTFORM_AGENT_ID}`;
-const CALLBACK_CHAT_MESSAGE = 'Have someone call me back';
 
-const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
-
-function getJotformFrame() {
-  return document.querySelector<HTMLIFrameElement>(`iframe[src*="${JOTFORM_AGENT_ID}"]`);
+function triggerClick(element: HTMLElement) {
+  ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach((type) => {
+    element.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
+  });
+  element.click();
 }
 
 function clickVisibleElement(elements: Element[]) {
@@ -611,50 +630,47 @@ function clickVisibleElement(elements: Element[]) {
     return rect.width > 0 && rect.height > 0;
   });
 
-  element?.click();
+  if (element) triggerClick(element);
   return Boolean(element);
 }
 
-function tryFillCallbackMessage(root: ParentNode) {
-  const input = root.querySelector<HTMLElement>('textarea, input[type="text"], [contenteditable="true"]');
-  if (!input) return false;
+function openJotformLauncher(root: HTMLElement | null) {
+  if (!root) return false;
 
-  input.focus();
-  if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
-    input.value = CALLBACK_CHAT_MESSAGE;
-  } else {
-    input.textContent = CALLBACK_CHAT_MESSAGE;
+  // Target the avatar button inside the launcher
+  const toggle = root.querySelector<HTMLElement>('.ai-agent-chat-avatar');
+  if (toggle) {
+    triggerClick(toggle);
+    return true;
   }
-  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: CALLBACK_CHAT_MESSAGE }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-  input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
-  input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter' }));
 
-  const sendButton = root.querySelector<HTMLButtonElement>('button[aria-label*="Send"], button[type="submit"]');
-  sendButton?.click();
-  return true;
+  // Fallback: any visible clickable element inside the root
+  return clickVisibleElement(
+    ['.ai-agent-chat-avatar-container', '[role="button"]', 'button']
+      .flatMap((sel) => Array.from(root.querySelectorAll(sel)))
+  );
+}
+
+
+function getJotformFrame() {
+  return document.querySelector<HTMLIFrameElement>(`iframe[src*="${JOTFORM_AGENT_ID}"]`);
 }
 
 async function promptCallbackChatbot() {
   const root = document.getElementById(JOTFORM_AGENT_ROOT_ID);
-  const frame = getJotformFrame();
+  const alreadyOpen = root?.querySelector('.ai-agent-chat-window-open, .ai-agent-chat-open, [class*="chat-open"]');
 
-  clickVisibleElement([
-    ...(root ? Array.from(root.querySelectorAll('button, [role="button"], [class*="avatar"], [class*="launcher"], img')) : []),
-    ...(frame ? [frame] : []),
-  ]);
-
-  frame?.contentWindow?.postMessage({ action: 'open' }, '*');
-  frame?.contentWindow?.postMessage({ action: 'openChat' }, '*');
-  frame?.contentWindow?.postMessage({ action: 'sendMessage', payload: { message: CALLBACK_CHAT_MESSAGE } }, '*');
-  await wait(700);
-
-  if (tryFillCallbackMessage(document)) return;
-  try {
-    if (frame?.contentDocument) tryFillCallbackMessage(frame.contentDocument);
-  } catch {
-    frame?.focus();
+  if (!alreadyOpen) {
+    openJotformLauncher(root);
+    // Wait for the chat panel to finish opening before sending
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 800));
   }
+
+  const frame = getJotformFrame();
+  frame?.contentWindow?.postMessage(
+    { action: 'postAgentEmbedSendMessage', payload: 'Requesting a call back' },
+    '*'
+  );
 }
 
 function HomePage({ navigate }: { navigate: (page: Page) => void }) {
@@ -676,7 +692,7 @@ function HomePage({ navigate }: { navigate: (page: Page) => void }) {
             </button>
             <button className="btn btn-outline btn-large" onClick={promptCallbackChatbot}>
               <Icon name="phone" />
-              Call for consultation
+              Request a call back
             </button>
           </div>
           <div className="hero-proof">
@@ -891,14 +907,57 @@ function ServiceAreaSection({ navigate }: { navigate: (page: Page) => void }) {
 }
 
 function MapEmbed() {
+  const mapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let map: import('leaflet').Map | null = null;
+    let cancelled = false;
+
+    async function initMap() {
+      const L = await import('leaflet');
+      if (!mapRef.current || cancelled) return;
+
+      map = L.map(mapRef.current, {
+        center: [43.68, -79.45],
+        zoom: 9,
+        scrollWheelZoom: false,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
+
+      const markerIcon = L.divIcon({
+        className: 'service-area-marker',
+        html: '<span></span>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+        popupAnchor: [0, -10],
+      });
+
+      const bounds = L.latLngBounds([]);
+      serviceAreaLocations.forEach(({ name, coords }) => {
+        L.marker(coords, { icon: markerIcon, title: name })
+          .addTo(map!)
+          .bindPopup(`<strong>${name}</strong><br />AsherTouch service area`);
+        bounds.extend(coords);
+      });
+
+      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 10 });
+      window.setTimeout(() => map?.invalidateSize(), 0);
+    }
+
+    initMap();
+
+    return () => {
+      cancelled = true;
+      map?.remove();
+    };
+  }, []);
+
   return (
     <div className="map-embed">
-      <iframe
-        title={`Map of ${CONTACT.address}`}
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        src="https://www.google.com/maps?q=7030%20Woodbine%20Ave%2C%20Suite%20500%2C%20Markham%20ON%20L3R%206G2&output=embed"
-      />
+      <div ref={mapRef} className="service-map" aria-label="Interactive map of AsherTouch service areas across Toronto and the GTA" />
     </div>
   );
 }
