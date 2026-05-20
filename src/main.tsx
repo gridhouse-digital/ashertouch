@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import './styles.css';
@@ -337,7 +337,7 @@ function useRoute() {
 
 function isNavActive(current: Page, target: Page) {
   if (current === target) return true;
-  return target === 'services' && current === 'service-rates';
+  return target === 'services' && (current === 'service-rates' || current === 'areas');
 }
 
 function App() {
@@ -414,12 +414,12 @@ function Header({
 
   const links: Array<[Page, string]> = [
     ['home', 'Home'],
-    ['services', 'Services'],
     ['about', 'About'],
-    ['areas', 'Service Area'],
+    ['services', 'Services'],
     ['careers', 'Careers'],
     ['contact', 'Contact'],
   ];
+  const serviceDropdownLinks: Array<[Page, string]> = [['areas', 'Service Areas']];
 
   const menuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -483,17 +483,44 @@ function Header({
             <img src="/assets/logo/ashertouch-light-mode-logo.png" alt="" />
           </button>
           <div className="desktop-nav" role="menubar">
-            {links.map(([target, label]) => (
-              <button
-                key={target}
-                role="menuitem"
-                className={isNavActive(page, target) ? 'active' : ''}
-                aria-current={isNavActive(page, target) ? 'page' : undefined}
-                onClick={() => navigate(target)}
-              >
-                {label}
-              </button>
-            ))}
+            {links.map(([target, label]) =>
+              target === 'services' ? (
+                <div className="nav-dropdown" key={target}>
+                  <button
+                    role="menuitem"
+                    className={isNavActive(page, target) ? 'active' : ''}
+                    aria-current={isNavActive(page, target) ? 'page' : undefined}
+                    aria-haspopup="menu"
+                    onClick={() => navigate(target)}
+                  >
+                    {label}
+                  </button>
+                  <div className="nav-dropdown-menu" role="menu" aria-label="Services menu">
+                    {serviceDropdownLinks.map(([dropdownTarget, dropdownLabel]) => (
+                      <button
+                        key={dropdownTarget}
+                        role="menuitem"
+                        className={isNavActive(page, dropdownTarget) ? 'active' : ''}
+                        aria-current={isNavActive(page, dropdownTarget) ? 'page' : undefined}
+                        onClick={() => navigate(dropdownTarget)}
+                      >
+                        {dropdownLabel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  key={target}
+                  role="menuitem"
+                  className={isNavActive(page, target) ? 'active' : ''}
+                  aria-current={isNavActive(page, target) ? 'page' : undefined}
+                  onClick={() => navigate(target)}
+                >
+                  {label}
+                </button>
+              )
+            )}
           </div>
           <div className="nav-actions">
             <a className="btn btn-outline compact" href={CONTACT.phoneHref} aria-label={`Call ${CONTACT.phone}`}>
@@ -534,15 +561,28 @@ function Header({
         </div>
         <div className="mobile-menu-links" role="menu">
           {links.map(([target, label]) => (
-            <button
-              key={target}
-              role="menuitem"
-              onClick={() => navigate(target)}
-              className={isNavActive(page, target) ? 'active' : ''}
-              aria-current={isNavActive(page, target) ? 'page' : undefined}
-            >
-              {label}
-            </button>
+            <React.Fragment key={target}>
+              <button
+                role="menuitem"
+                onClick={() => navigate(target)}
+                className={isNavActive(page, target) ? 'active' : ''}
+                aria-current={isNavActive(page, target) ? 'page' : undefined}
+              >
+                {label}
+              </button>
+              {target === 'services' &&
+                serviceDropdownLinks.map(([dropdownTarget, dropdownLabel]) => (
+                  <button
+                    key={dropdownTarget}
+                    role="menuitem"
+                    onClick={() => navigate(dropdownTarget)}
+                    className={`mobile-sub-link ${isNavActive(page, dropdownTarget) ? 'active' : ''}`}
+                    aria-current={isNavActive(page, dropdownTarget) ? 'page' : undefined}
+                  >
+                    {dropdownLabel}
+                  </button>
+                ))}
+            </React.Fragment>
           ))}
         </div>
         <button className="btn btn-primary mobile-menu-cta" onClick={() => navigate('contact')}>
@@ -552,6 +592,91 @@ function Header({
       </div>
     </>
   );
+}
+
+const JOTFORM_AGENT_ID = '019e43a10d0b7b74a9f3b75bd0df905b92c6';
+const JOTFORM_AGENT_ROOT_ID = `JotformAgent-${JOTFORM_AGENT_ID}`;
+const CALLBACK_CHAT_MESSAGE = 'Have someone call me back';
+
+const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
+function getJotformFrame() {
+  return document.querySelector<HTMLIFrameElement>(`iframe[src*="${JOTFORM_AGENT_ID}"]`);
+}
+
+function clickVisibleElement(elements: Element[]) {
+  const element = elements.find((candidate): candidate is HTMLElement => {
+    if (!(candidate instanceof HTMLElement)) return false;
+    const rect = candidate.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  });
+
+  element?.click();
+  return Boolean(element);
+}
+
+function tryFillCallbackMessage(root: ParentNode) {
+  const input = root.querySelector<HTMLElement>('textarea, input[type="text"], [contenteditable="true"]');
+  if (!input) return false;
+
+  input.focus();
+  if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+    input.value = CALLBACK_CHAT_MESSAGE;
+  } else {
+    input.textContent = CALLBACK_CHAT_MESSAGE;
+  }
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: CALLBACK_CHAT_MESSAGE }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+  input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+  input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter' }));
+
+  const sendButton = root.querySelector<HTMLButtonElement>('button[aria-label*="Send"], button[type="submit"]');
+  sendButton?.click();
+  return true;
+}
+
+function forceOpenJotformPanel(root: HTMLElement | null) {
+  const panel = root?.querySelector<HTMLElement>('.panel-view');
+  const slider = root?.querySelector<HTMLElement>('.panel-view-slider');
+  const wrapper = root?.querySelector<HTMLElement>('.panel-view-fixed-wrapper');
+  const chat = root?.querySelector<HTMLElement>('.ai-agent-chat-animation-container');
+
+  panel?.classList.add('opened');
+  slider?.classList.add('isPanelOpened');
+  chat?.classList.add('isOpened');
+
+  [wrapper, slider, chat].forEach((element) => {
+    if (!element) return;
+    element.style.pointerEvents = 'auto';
+    element.style.opacity = '1';
+    element.style.transform = 'translate3d(0, 0, 0)';
+    element.style.visibility = 'visible';
+  });
+
+  return Boolean(slider);
+}
+
+async function promptCallbackChatbot() {
+  const root = document.getElementById(JOTFORM_AGENT_ROOT_ID);
+  const frame = getJotformFrame();
+
+  forceOpenJotformPanel(root);
+  clickVisibleElement([
+    ...(root ? Array.from(root.querySelectorAll('button, [role="button"], [class*="avatar"], [class*="launcher"], img')) : []),
+    ...(frame ? [frame] : []),
+  ]);
+
+  frame?.contentWindow?.postMessage({ action: 'open' }, '*');
+  frame?.contentWindow?.postMessage({ action: 'openChat' }, '*');
+  frame?.contentWindow?.postMessage({ action: 'sendMessage', payload: { message: CALLBACK_CHAT_MESSAGE } }, '*');
+  await wait(700);
+
+  if (tryFillCallbackMessage(document)) return;
+  try {
+    if (frame?.contentDocument) tryFillCallbackMessage(frame.contentDocument);
+  } catch {
+    frame?.focus();
+  }
 }
 
 function HomePage({ navigate }: { navigate: (page: Page) => void }) {
@@ -571,7 +696,7 @@ function HomePage({ navigate }: { navigate: (page: Page) => void }) {
               Book a free assessment
               <Icon name="arrow" />
             </button>
-            <button className="btn btn-outline btn-large" onClick={() => navigate('contact')}>
+            <button className="btn btn-outline btn-large" onClick={promptCallbackChatbot}>
               <Icon name="phone" />
               Call for consultation
             </button>
@@ -1072,25 +1197,51 @@ function CareersPage({ navigate }: { navigate: (page: Page) => void }) {
   );
 }
 
+function JotformEmbed() {
+  useEffect(() => {
+    const scriptId = 'jotform-embed-handler';
+    const formSelector = "iframe[id='JotFormIFrame-261394827910059']";
+    const jotformOrigin = 'https://form.jotform.com/';
+    const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+    const initializeEmbed = () => {
+      const handler = (window as Window & {
+        jotformEmbedHandler?: (selector: string, origin: string) => void;
+      }).jotformEmbedHandler;
+
+      handler?.(formSelector, jotformOrigin);
+    };
+
+    if (existingScript) {
+      initializeEmbed();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js';
+    script.async = true;
+    script.onload = initializeEmbed;
+    document.body.appendChild(script);
+  }, []);
+
+  return (
+    <div className="form-card jotform-card">
+      <iframe
+        id="JotFormIFrame-261394827910059"
+        title="Contact Us Form"
+        onLoad={() => window.parent.scrollTo(0, 0)}
+        allowTransparency
+        allow="geolocation; microphone; camera; fullscreen; payment"
+        src="https://form.jotform.com/261394827910059"
+        frameBorder="0"
+        className="jotform-iframe"
+        scrolling="no"
+      />
+    </div>
+  );
+}
+
 function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
-  const options = useMemo(() => ['Adult child', 'Spouse / partner', 'Other family', 'Caring for myself'], []);
-  const [relationship, setRelationship] = useState(options[0]);
-
-  if (submitted) {
-    return (
-      <section className="section success-section" role="status" aria-live="polite">
-        <span className="icon-chip green"><Icon name="check" /></span>
-        <h1>Thank you. Your request is ready for follow-up.</h1>
-        <p>
-          This demo does not send data yet. Connect this form to the approved CRM, email service, or form endpoint before
-          production launch.
-        </p>
-        <button className="btn btn-primary" onClick={() => setSubmitted(false)}>Submit another request</button>
-      </section>
-    );
-  }
-
   return (
     <>
       <PageHero
@@ -1099,60 +1250,7 @@ function ContactPage() {
       />
       <section className="section paper contact-section">
         <div className="contact-layout">
-          <form className="form-card" onSubmit={(event) => { event.preventDefault(); setSubmitted(true); }}>
-            <div className="stepper" role="group" aria-label="Assessment form progress: Step 1 of 3">
-              <span className="active" aria-current="step">1</span><i aria-hidden="true" /><span>2</span><i aria-hidden="true" /><span>3</span>
-            </div>
-            <h2>Book your free in-home assessment</h2>
-            <p>Step 1 of 3. Required fields are marked.</p>
-            <div className="field-grid">
-              <div className="field">
-                <label htmlFor="firstName">First name <span aria-hidden="true">*</span></label>
-                <input id="firstName" name="firstName" required placeholder="e.g. Maria" autoComplete="given-name" />
-              </div>
-              <div className="field">
-                <label htmlFor="lastName">Last name <span aria-hidden="true">*</span></label>
-                <input id="lastName" name="lastName" required placeholder="e.g. Reyes" autoComplete="family-name" />
-              </div>
-            </div>
-            <div className="field-grid">
-              <div className="field">
-                <label htmlFor="email">Email <span aria-hidden="true">*</span></label>
-                <input id="email" name="email" required type="email" placeholder="you@example.com" autoComplete="email" />
-              </div>
-              <div className="field">
-                <label htmlFor="phone">Phone <span aria-hidden="true">*</span></label>
-                <input id="phone" name="phone" required type="tel" placeholder="(416) 293-3779" autoComplete="tel" />
-              </div>
-            </div>
-            <fieldset>
-              <legend>Your relationship to the person needing care</legend>
-              <div className="radio-grid">
-                {options.map((option) => {
-                  const id = `relationship-${option.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '')}`;
-                  return (
-                    <label key={option} className={`radio-option ${relationship === option ? 'selected' : ''}`} htmlFor={id}>
-                      <input
-                        type="radio"
-                        id={id}
-                        name="relationship"
-                        value={option}
-                        checked={relationship === option}
-                        onChange={() => setRelationship(option)}
-                      />
-                      <span className="radio-indicator" aria-hidden="true" />
-                      {option}
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-            <div className="field">
-              <label htmlFor="support">What kind of support are you looking for?</label>
-              <textarea id="support" name="support" placeholder="Tell us a little about your loved one's routines, needs, or questions." />
-            </div>
-            <button className="btn btn-primary btn-large" type="submit">Continue to step 2 <Icon name="arrow" /></button>
-          </form>
+          <JotformEmbed />
           <aside className="contact-cards" aria-label="Contact information">
             <a className="contact-card" href={CONTACT.phoneHref}>
               <span className="icon-chip blue"><Icon name="phone" /></span>
