@@ -402,14 +402,14 @@ a.btn-outline {
   border-bottom: 1px solid var(--linen);
 }
 
-.mobile-menu-head img {
-  display: block;
+.mobile-menu-logo-button {
   flex-shrink: 0;
+  max-width: calc(100% - 56px);
+}
+
+.mobile-menu-logo-button img {
   width: 138px;
   height: auto;
-  max-width: calc(100% - 56px);
-  aspect-ratio: 350 / 120;
-  object-fit: contain;
 }
 
 .mobile-menu-links {

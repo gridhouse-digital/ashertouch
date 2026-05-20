@@ -573,7 +573,9 @@ function Header({
         aria-hidden={!menuOpen}
       >
         <div className="mobile-menu-head">
-          <img src="/assets/logo/ashertouch-light-mode-logo.png" width="350" height="120" alt="" />
+          <button type="button" className="logo-button mobile-menu-logo-button" onClick={() => navigate('home')} aria-label="AsherTouch Homecare home">
+            <img src="/assets/logo/ashertouch-light-mode-logo.png" width="350" height="120" alt="" />
+          </button>
           <button ref={closeButtonRef} className="icon-action" onClick={closeMenu} aria-label="Close menu">
             <Icon name="close" />
           </button>
