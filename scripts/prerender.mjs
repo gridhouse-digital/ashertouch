@@ -37,7 +37,7 @@ const routeMeta = {
   '/careers': {
     title: 'Caregiver Jobs Toronto | AsherTouch Homecare Careers',
     description:
-      'Join AsherTouch Homecare as a caregiver in Toronto. We value compassion, reliability, and trust. Background checks and training provided.',
+      'Apply to join AsherTouch Homecare as a caregiver in Toronto and the GTA. Submit your resume, tell us about your interest, and hear back within one business day.',
   },
   '/contact': {
     title: 'Book a Free In-Home Assessment | AsherTouch Homecare',

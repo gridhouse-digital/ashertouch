@@ -191,7 +191,7 @@ const pageMeta: Record<Page, { title: string; description: string; path: string 
   },
   careers: {
     title: 'Caregiver Jobs Toronto | AsherTouch Homecare Careers',
-    description: 'Join AsherTouch Homecare as a caregiver in Toronto. We value compassion, reliability, and trust. Background checks and training provided.',
+    description: 'Apply to join AsherTouch Homecare as a caregiver in Toronto and the GTA. Submit your resume, tell us about your interest, and hear back within one business day.',
     path: '/careers',
   },
   contact: {
@@ -1243,33 +1243,203 @@ function AreasPage({ navigate }: { navigate: (page: Page) => void }) {
   );
 }
 
+const careersPerks = [
+  {
+    tone: 'blue',
+    icon: 'heart' as IconName,
+    title: 'Meaningful work',
+    text: 'Support seniors in the place they feel safest — their own home, on their own terms.',
+  },
+  {
+    tone: 'green',
+    icon: 'users' as IconName,
+    title: 'Supported team',
+    text: 'Care coordinators help you understand each client, family, and care plan before you arrive.',
+  },
+  {
+    tone: 'orange',
+    icon: 'clock' as IconName,
+    title: 'Flexible schedules',
+    text: 'Part-time, full-time, and live-in opportunities across Toronto and the GTA.',
+  },
+  {
+    tone: 'blue',
+    icon: 'shield' as IconName,
+    title: 'Professional standards',
+    text: 'Background checks, references, and interviews are part of how we protect families and caregivers.',
+  },
+];
+
+const careersSteps = [
+  { step: '01', title: 'Submit your interest', text: 'Share your details and upload your resume through the form below.' },
+  { step: '02', title: 'Initial conversation', text: 'A coordinator will reach out to learn about your experience and availability.' },
+  { step: '03', title: 'Interview & screening', text: 'References and background checks are completed before placement.' },
+  { step: '04', title: 'Client matching', text: 'We introduce you to a family where your skills and personality fit.' },
+];
+
 function CareersPage({ navigate }: { navigate: (page: Page) => void }) {
+  const scrollToApply = () => {
+    document.getElementById('careers-apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <>
-      <PageHero
-        title={<>Bring warmth into someone's <em>home.</em></>}
-        text="AsherTouch is preparing a caregiver recruitment path for compassionate people who take dignity, reliability, and trust seriously."
-        action="Contact us"
-        navigate={navigate}
-      />
-      <section className="section paper">
-        <SectionHead label="Caregiver standards" title={<>What matters to us.</>} text="Hiring details should be finalized with the client before launch." />
+      <section className="page-hero careers-hero">
+        <div>
+          <span className="section-label">Caregiver careers</span>
+          <h1>
+            Bring warmth into someone's <em>home.</em>
+          </h1>
+          <p className="page-hero-lede">
+            AsherTouch is looking for compassionate caregivers across Toronto and the GTA — people who take dignity,
+            reliability, and trust as seriously as we do.
+          </p>
+          <div className="careers-hero-actions">
+            <button className="btn btn-primary btn-large" onClick={scrollToApply}>
+              Submit interest <Icon name="arrow" />
+            </button>
+            <a className="btn btn-outline btn-large" href="mailto:careers@ashertouch-hc.com">
+              <Icon name="mail" /> careers@ashertouch-hc.com
+            </a>
+          </div>
+          <div className="careers-hero-stats" aria-label="Career highlights">
+            <div>
+              <strong>Toronto &amp; GTA</strong>
+              <small>Service area</small>
+            </div>
+            <div>
+              <strong>Non-medical</strong>
+              <small>Home care focus</small>
+            </div>
+            <div>
+              <strong>Resume required</strong>
+              <small>Quick application</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section paper careers-perks">
+        <SectionHead
+          center
+          label="Why join us"
+          title={<>Care that rewards the people who give it.</>}
+          text="You are not a line item on a schedule. You are the reason a family can breathe a little easier."
+        />
+        <div className="careers-perk-grid">
+          {careersPerks.map((perk) => (
+            <article key={perk.title} className="careers-perk-card">
+              <span className={`icon-chip ${perk.tone}`}>
+                <Icon name={perk.icon} />
+              </span>
+              <h3>{perk.title}</h3>
+              <p>{perk.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="section careers-standards">
+        <SectionHead
+          label="Caregiver standards"
+          title={<>What matters to us.</>}
+          text="Every placement starts with the same question: would we trust this person in our own parent's home?"
+        />
         <div className="story-grid">
           <StoryCard number="i" tone="blue" title="Compassion" text="The ability to be patient, respectful, and present in someone's home." />
           <StoryCard number="ii" tone="green" title="Reliability" text="Families need caregivers who show up prepared, on time, and ready to help." />
           <StoryCard number="iii" tone="orange" title="Trust" text="Background checks, references, and interviews are part of the standard." />
         </div>
       </section>
-      <ClosingCta navigate={navigate} />
+
+      <section id="careers-apply" className="section paper careers-apply">
+        <div className="careers-apply-layout">
+          <div className="careers-form-panel">
+            <div className="careers-form-intro">
+              <span className="section-label">Apply today</span>
+              <h2>
+                Caregiver career <em>interest form</em>
+              </h2>
+              <p>
+                Fill out your details and upload your resume. A care coordinator will follow up within one business day.
+              </p>
+            </div>
+            <JotformEmbed
+              formId="261608558046058"
+              title="Ashertouch Caregiver Career Interest Form"
+              variant="careers"
+            />
+          </div>
+          <aside className="careers-sidebar" aria-label="Application process">
+            <div className="careers-process-card">
+              <span className="section-label">What happens next</span>
+              <h3>From application to placement</h3>
+              <ol className="careers-steps">
+                {careersSteps.map((item) => (
+                  <li key={item.step}>
+                    <span className="careers-step-number">{item.step}</span>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>{item.text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="careers-contact-card">
+              <span className="icon-chip orange">
+                <Icon name="phone" />
+              </span>
+              <small>Questions before you apply?</small>
+              <strong>{CONTACT.phone}</strong>
+              <p>Call or email {CONTACT.email} and our team will help.</p>
+              <button className="text-button" onClick={() => navigate('contact')}>
+                General inquiries <Icon name="arrow" />
+              </button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="cta-band careers-cta">
+        <div>
+          <span className="section-label">Not ready to apply?</span>
+          <h2>
+            Start with a conversation <em>instead.</em>
+          </h2>
+          <p>
+            Whether you are exploring caregiving for the first time or bringing years of experience, we are happy to talk
+            through opportunities across Toronto and the GTA.
+          </p>
+        </div>
+        <div className="cta-actions">
+          <a className="btn btn-accent btn-large" href={CONTACT.phoneHref}>
+            <Icon name="phone" /> {CONTACT.phone}
+          </a>
+          <button className="btn btn-dark-outline btn-large" onClick={() => navigate('contact')}>
+            Contact the team <Icon name="arrow" />
+          </button>
+        </div>
+      </section>
     </>
   );
 }
 
-function JotformEmbed() {
+function JotformEmbed({
+  formId,
+  title,
+  variant = 'contact',
+}: {
+  formId: string;
+  title: string;
+  variant?: 'contact' | 'careers';
+}) {
+  const iframeId = `JotFormIFrame-${formId}`;
+  const formSelector = `iframe[id='${iframeId}']`;
+  const jotformOrigin = 'https://form.jotform.com/';
+
   useEffect(() => {
     const scriptId = 'jotform-embed-handler';
-    const formSelector = "iframe[id='JotFormIFrame-261394827910059']";
-    const jotformOrigin = 'https://form.jotform.com/';
     const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
     const initializeEmbed = () => {
       const handler = (window as Window & {
@@ -1290,19 +1460,19 @@ function JotformEmbed() {
     script.async = true;
     script.onload = initializeEmbed;
     document.body.appendChild(script);
-  }, []);
+  }, [formId, formSelector]);
 
   return (
-    <div className="form-card jotform-card">
+    <div className={`form-card jotform-card jotform-card--${variant}`}>
       <iframe
-        id="JotFormIFrame-261394827910059"
-        title="Contact Us Form"
+        id={iframeId}
+        title={title}
         onLoad={() => window.parent.scrollTo(0, 0)}
         allowTransparency
         allow="geolocation; microphone; camera; fullscreen; payment"
-        src="https://form.jotform.com/261394827910059"
+        src={`https://form.jotform.com/${formId}`}
         frameBorder="0"
-        className="jotform-iframe"
+        className={`jotform-iframe jotform-iframe--${variant}`}
         scrolling="no"
       />
     </div>
@@ -1318,7 +1488,7 @@ function ContactPage() {
       />
       <section className="section paper contact-section">
         <div className="contact-layout">
-          <JotformEmbed />
+          <JotformEmbed formId="261394827910059" title="Contact Us Form" />
           <aside className="contact-cards" aria-label="Contact information">
             <a className="contact-card" href={CONTACT.phoneHref}>
               <span className="icon-chip blue"><Icon name="phone" /></span>
