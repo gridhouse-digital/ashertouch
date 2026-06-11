@@ -1298,8 +1298,9 @@ function CareersPage({ navigate }: { navigate: (page: Page) => void }) {
             <button className="btn btn-primary btn-large" onClick={scrollToApply}>
               Submit interest <Icon name="arrow" />
             </button>
-            <a className="btn btn-outline btn-large" href="mailto:careers@ashertouch-hc.com">
-              <Icon name="mail" /> careers@ashertouch-hc.com
+            <a className="btn btn-outline btn-large careers-hero-email" href="mailto:careers@ashertouch-hc.com">
+              <Icon name="mail" />
+              <span className="careers-email-label">careers@ashertouch-hc.com</span>
             </a>
           </div>
           <div className="careers-hero-stats" aria-label="Career highlights">
